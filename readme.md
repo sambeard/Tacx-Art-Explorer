@@ -17,7 +17,7 @@ More detailed information about the requirements of this assignment can be found
 
 Tacx Art Explorer has two main views, the art list view and art detail view. These views allow the user to browse artworks of the Art Institute of Chicago. The list view allows for a quick overview of all artworks by a specific artist. Clicking one of the list items opens up a detail view which displays more information as well as an image of the artwork itself. Using the back button one can navigate back to the main list view, or browse other artworks in detail using the previous and next buttons.
 
-![Graphical wireframe style design tacx art explorer](.\mockup.jpg)
+![Graphical wireframe style design tacx art explorer](./mockup.jpg)
 
 ## Architecture
 
