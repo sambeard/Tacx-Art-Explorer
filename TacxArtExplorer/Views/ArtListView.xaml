@@ -1,0 +1,69 @@
+﻿<UserControl x:Class="TacxArtExplorer.Views.ArtListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             xmlns:vm="clr-namespace:TacxArtExplorer.ViewModels"
+             Margin="16">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+
+        </Grid.RowDefinitions>
+
+        <!-- Search Bar -->
+        <!--<StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+            <TextBox Width="300"
+               Margin="0,0,8,0"
+               materialDesign:HintAssist.Hint="Artist Name"
+               Text="{Binding ArtistQuery, UpdateSourceTrigger=PropertyChanged}"/>
+            <Button Content="Search"
+              Command="{Binding LoadArtworksCommand}"
+              Style="{StaticResource MaterialDesignRaisedButton}" />
+        </StackPanel>-->
+        <!-- Loading Indicator -->
+        <ProgressBar Grid.Row="1"
+                 Height="4"
+                 IsIndeterminate="True"
+                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                 Margin="0,0,0,8"/>
+
+        <!-- Artwork List -->
+        <ListBox Grid.Row="2"
+             ItemsSource="{Binding ArtPieces}"
+             SelectedItem="{Binding SelectedArtPiece}"
+             Style="{StaticResource MaterialDesignListBox}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="4">
+                        <Image Source="{Binding ThumbnailImage}"
+                   Width="48" Height="48"
+                   Margin="0,0,8,0"
+                   Stretch="UniformToFill"/>
+                        <TextBlock Text="{Binding Title}"
+                       VerticalAlignment="Center"
+                       FontSize="14"/>
+                        <TextBlock Text=" — "
+                       VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding ArtistName}"
+                       VerticalAlignment="Center"
+                       Foreground="Gray"/>
+                        <Button Command="{Binding SelectArtPieceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" >
+                            <materialDesign:PackIcon Padding="5" Kind="ChevronRight" Width="24" Height="24"/>
+                        </Button>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+
+            <!-- Double‑click to open detail -->
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="MouseDoubleClick">
+                    <i:InvokeCommandAction Command="{Binding SelectArtPieceCommand}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+        </ListBox>
+    </Grid>
+</UserControl>
