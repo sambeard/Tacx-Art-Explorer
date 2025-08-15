@@ -3,7 +3,8 @@
 This is the Tacx Art Explorer project, which is the assignment for my interview process at Tacx.
 
 It can be used to browse artworks from the [Art Instituate of Chicago](https://www.artic.edu/). All the images and provided meta data is originally sourced from the [Artic API]((https://api.artic.edu/docs/#introduction) )
-![Tacx Art Explorer Homepage](./homepage.png)
+
+![Tacx Art Explorer Preview](./UsageRecording.gif)
 
 More detailed information about the requirements of this assignment can be found in the [assignment description](.\Test assignment for Windows desktop developer.pdf)
 
@@ -75,7 +76,10 @@ The background syncer service is responsible for polling the database for artist
     - [x] store
     - [x] retreive
     - [x] invalidate
+  - [x] ImageRepo
+  - [ ] 
 - [x] Views
+  - [ ] splash screen
   - [x] list view
     - [x] List view item
     - [ ] Drag from top refresh
@@ -88,9 +92,15 @@ The background syncer service is responsible for polling the database for artist
       - [x] Title overlay
     - [x] Detail meta data
     - [x] move buttons
+
 - [x] Logic (ViewModels)
 - [x] Testing
-  - [ ] Service testing (partly)
+  - [ ] Service testing (partly done)
+  - [ ] Viewmodel testing (partly done)
+- [ ] User level logging
+  - [ ] log from ILogger logs
+  - [ ] use toasts / temporary banners
+
 
 
 
