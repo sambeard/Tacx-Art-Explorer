@@ -7,19 +7,11 @@ using System.Threading.Tasks;
 
 namespace TacxArtExplorer.Models
 {
-    internal record ArtPieceImage
+    public sealed record ArtPieceImage
     {
-        public string Id { get; set; }
-        public ImageFormat Format { get; set; }
-        public SizeOption  SizeOption { get; set; }
-        public byte[] Data { get; set; }
-
-        public ArtPieceImage(string id, ImageFormat format, SizeOption sizeOption, byte[] data)
-        {
-            Id = id;
-            Format = format;
-            SizeOption = sizeOption;
-            Data = data;
-        }
+        public required string Id { get; init; }
+        public ImageFormat Format { get; init; }
+        public SizeOption  SizeOption { get; init; }
+        public required byte[] Data { get; init; }
     }
 }

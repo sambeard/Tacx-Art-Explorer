@@ -14,68 +14,73 @@ namespace TacxArtExplorer.Services
 {
 
 
-    internal interface IArtAPIService : IArtService { }
+    public interface IArtAPIService : IArtService { }
 
-    internal class ArtAPIService : IArtAPIService
+    public class ArtAPIService : IArtAPIService
     {
-        private readonly ArticImageClient _imClient;
-        private readonly ArticArtworkClient _apClient;
+        const int DEFAULT_PAGE_SIZE = 10;
+
+        private readonly IArticImageClient _imClient;
+        private readonly IArticArtworkClient _apClient;
         private readonly ILogger<ArtAPIService> _logger;
 
-        public ArtAPIService(ArticArtworkClient apClient, ArticImageClient imClient, ILogger<ArtAPIService> logger)
+        public ArtAPIService(IArticArtworkClient apClient, IArticImageClient imClient, ILogger<ArtAPIService> logger)
         {
             _imClient = imClient;
             _apClient = apClient;
             _logger = logger;
         }
 
-        public async Task<IEnumerable<ArtPiece>?> GetArtPiecesByArtistAsync(Artist artist, int page, int limit)
+        public async Task<IEnumerable<ArtPiece>?> GetArtPiecesByArtistAsync(Artist artist)
         {
-            IEnumerable<ArtPiece>? aps = null;
+            // mock slow connection
+            await Task.Delay(2500);
+            IEnumerable<ArtPiece>? aps = [];
             try
             {
-                _logger.LogInformation("Fetching ArtPieces for artist {Artist} from API", artist.Name);
-                var endpoint = _apClient.GetArtworksEndpoint(artist, page, limit);
-                var response = (ArtworksApiResponseDto)await _apClient.GetAsync(endpoint);
-                if (response != null && response.Data != null && response.Data.Any())
-                {
-                    aps = DTOMapper.ToArtPieces(response);
-                    _logger.LogInformation("Fetched {Count} art pieces for artist {Artist}", aps.Count(), artist.Name);
-                }
-                else
-                {
-                    _logger.LogWarning("No art pieces found for artist {Artist}", artist.Name);
+                _logger.LogInformation("Fetching artworks for artist {Artist} from API", artist.Name);
+                bool shouldQueryApi = true;
+                int page = 0;
+                while (shouldQueryApi) {
+                    // 1-based index pagination
+                    var p = new PaginationDTO { Page = ++page, Limit = DEFAULT_PAGE_SIZE };
+                    var response = await _apClient.GetArtworksFromArtistId(artist.Id, p);
+                    if (response != null && response.Data != null && response.Data.Any())
+                    {
+                        aps = aps.Concat(DTOMapper.ToArtPieces(response));
+                        _logger.LogInformation("Fetched {Count} artworks for artist {Artist}", aps.Count(), artist.Name);
+                    }
+                    else
+                    {
+                        shouldQueryApi = false; // no more artworks to fetch
+                        _logger.LogWarning("No artworks found for artist {Artist} and page {Page}", artist.Name, page);
+                        continue;
+                    }
+                    shouldQueryApi &= response.Pagination.CurrentPage < response.Pagination.TotalPages; // continue if there are more pages
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching or parsing ArtPieces for {Artist}", artist.Name);
+                aps = null;
+                _logger.LogError(ex, "Error fetching or parsing artWorks for {Artist} from API", artist.Name);
             }
-            return await Task.FromResult(aps);
+            return aps;
         }
 
         public async Task<ArtPieceImage?> GetImageByIdAsync(string imageId, SizeOption? size, ImageFormat format)
         {
-            throw new NotImplementedException();
-            //var _size = size ?? SizeOption.Default;
-            //var url = imageSearchPath(imageId, _size, format);
-            //try
-            //{
-            //    var response = await _http.GetAsync(url);
-            //    response.EnsureSuccessStatusCode();
+            // mock slow connection
+            await Task.Delay(1500);
 
-            //    var data = await response.Content.ReadAsByteArrayAsync();
-            //    ArtPieceImage image = new(imageId, format, _size, data);
-            //    return await Task.FromResult(image);
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogError(ex, "Error fetching Image with id {ImageId}", imageId);
-            //    return await Task.FromResult<ArtPieceImage?>(null);
-            //}
+            try
+            {
+                return await _imClient.GetImageById(imageId, size, format);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Image with id {ImageId}", imageId);
+                return null;
+            }
         }
-        
-    
-        private string imageSearchPath(string imageId, SizeOption size, ImageFormat format) => $"images/{Uri.EscapeDataString(imageId)}/full/{size.ToString()}/0/default.{format.ToString().ToLower()}";
     }
 }

@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿    using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,15 +10,14 @@ using TacxArtExplorer.Models;
 
 namespace TacxArtExplorer.Services
 {
-    internal interface IArtService
+    public interface IArtService
     {
-        const int DEFAULT_PAGE_SIZE = 10;
         // Define methods that the ArtService should implement
-        Task<IEnumerable<ArtPiece>?> GetArtPiecesByArtistAsync(Artist artist, int page = 0, int limit = DEFAULT_PAGE_SIZE);
+        Task<IEnumerable<ArtPiece>?> GetArtPiecesByArtistAsync(Artist artist);
         Task<ArtPieceImage?> GetImageByIdAsync(string imageId, SizeOption? size = null, ImageFormat format = ImageFormat.JPG);
     }
 
-    internal class ArtService : IArtService
+    public class ArtService : IArtService
     {
         // This class is a placeholder for the ArtService implementation.
         // It will contain methods to interact with the Art API, such as fetching art pieces, artists, etc.
@@ -35,37 +35,97 @@ namespace TacxArtExplorer.Services
             _cacheService = cacheService;
             _logger = logger;
         }
-        public async Task<IEnumerable<ArtPiece>?> GetArtPiecesByArtistAsync(Artist artist, int page = 0, int limit = 10)
+        public async Task<IEnumerable<ArtPiece>?> GetArtPiecesByArtistAsync(Artist artist)
         {
-            // mock slow connection
-            await Task.Delay(2500);
-            if (await _cacheService.GetArtPiecesByArtistAsync(artist, page, limit) is IEnumerable<ArtPiece> cachedArtPieces &&
-                cachedArtPieces != null && cachedArtPieces.Any()) 
-            {    
-                _logger.LogInformation("Returning cached art pieces for artist {Artist}", artist.Name);
-                return await Task.FromResult(cachedArtPieces);
+            IEnumerable<ArtPiece>? artPieces = null;
+            try
+            {
+                artPieces = await _cacheService.GetArtPiecesByArtistAsync(artist);
+                if (artPieces != null && artPieces.Any()) {
+                    _logger.LogInformation("Returning cached art pieces for artist {Artist}", artist.Name);
+                    return await Task.FromResult(artPieces);
+
+                }
+                _logger.LogInformation("No artpieces found in cache for artist {Artist}", artist.Name);
             }
-            else {
+            catch (Exception ex){
+                _logger.LogError(ex, "Error while retreiving art pieces from cache for artist {Artist}", artist.Name);
+            }
+            // resort to API
+            try
+            {
                 _logger.LogInformation("Fetching art pieces for artist {Artist} from API", artist.Name);
-                var artPieces = await _apiService.GetArtPiecesByArtistAsync(artist, page, limit);
+                artPieces = await _apiService.GetArtPiecesByArtistAsync(artist);
                 if (artPieces != null && artPieces.Any())
                 {
                     _logger.LogInformation("Storing fetched art pieces for artist {Artist} in cache", artist.Name);
                     // no need to await success of the store procedure
-                    _cacheService.StoreArtPieces(artist, page * limit, (page + 1) * limit, artPieces);
+                    Task.Run(async () => {
+                        try
+                        {
+                            var amnt = await _cacheService.InsertOrUpdateArtPiecesAsync(artPieces);
+                            if (amnt == artPieces.Count())
+                            {
+                                _logger.LogInformation("Succesfully stored {count} art pieces for artist {Artist}", amnt, artist.Name);
+                            }
+                            else if (amnt > 0 ){
+                                _logger.LogWarning("Only stored {count} / {total} art pieces", amnt, artPieces.Count());
+                            }
+                            else
+                            {
+                                throw new Exception("Could not insert or update art piece records");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error while storing {Count} artpieces for artist {Artist}", artPieces?.Count() ?? -1, artist.Name);
+                        }
+                    });
                 }
-                else {
+                else
+                {
                     // return empty list if no art pieces found
+                    _logger.LogInformation("No artpieces found for artist {Artist}", artist.Name);
                     artPieces = Enumerable.Empty<ArtPiece>();
                 }
-                return await Task.FromResult(artPieces);
+                return await Task.FromResult(artPieces.OrderBy(a => a.DisplayDate));
 
+            }
+            catch {
+                return await Task.FromResult(artPieces);
             } 
         }
 
-        public Task<ArtPieceImage?> GetImageByIdAsync(string imageId, SizeOption? size = null, ImageFormat format = ImageFormat.JPG)
+        public async Task<ArtPieceImage?> GetImageByIdAsync(string imageId, SizeOption? size = null, ImageFormat format = ImageFormat.JPG)
         {
-            throw new NotImplementedException();
+            ArtPieceImage? image = null;
+            try
+            {
+                image = await _cacheService.GetImageByIdAsync(imageId, size, format);
+
+            }
+            catch
+            {
+                image = null;
+            }
+            if (image is null) { 
+                try
+                {
+                    image = await _apiService.GetImageByIdAsync(imageId, size, format);
+                    Task.Run(async () =>
+                    {
+                        var amnt = await _cacheService.InsertOrUpdateImageAsync(image);
+                        if (amnt > 0)
+                            _logger.LogInformation("Succesfully inserted {count} image into cache", amnt);
+                        else
+                            _logger.LogWarning("Could not insert image with id {id} into cache", image.Id);
+                    });
+                }
+                catch {
+                    image = null;
+                }
+            }
+            return image;
         }
 
     }

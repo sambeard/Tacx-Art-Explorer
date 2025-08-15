@@ -1,24 +1,39 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Navigation;
 using TacxArtExplorer.Models;
 using TacxArtExplorer.Services;
 
 namespace TacxArtExplorer.ViewModels
 {
-    internal class ArtDetailViewModel : ObservableObject
+    public class ArtDetailViewModel : ObservableObject
     {
         private readonly INavigationService _nav;
+        private readonly IImageRepsitory _imageRepository;
+
         private ObservableCollection<ArtPiece> _context = new();
         private ArtPiece? _currentArtPiece;
         private ArtPieceViewModel? _currentVm;
         public ArtPieceViewModel? Current => _currentVm;
+
+        public ImageSource? _currentImageSource;
+        public ImageSource? CurrentImageSource
+        {
+            get => _currentImageSource;
+            set
+            {
+                _currentImageSource = value;
+                OnPropertyChanged(nameof(CurrentImageSource));
+            }
+        }
 
         public ArtPiece? CurrentArtPiece
         {
@@ -28,6 +43,10 @@ namespace TacxArtExplorer.ViewModels
                 if (SetProperty(ref _currentArtPiece, value))
                 {
                     _currentVm = (value is null) ? null : new ArtPieceViewModel(value);
+                    CurrentImageSource = _currentVm?.ThumbnailImage;
+                    Task.Run(async () => {
+                        CurrentImageSource = await _imageRepository.GetImageSource(value!.ImageID) ?? _currentVm?.ThumbnailImage;
+                    });
                     OnPropertyChanged(nameof(Current));
                     NextCommand.NotifyCanExecuteChanged();
                     PreviousCommand.NotifyCanExecuteChanged();
@@ -39,9 +58,10 @@ namespace TacxArtExplorer.ViewModels
         public IRelayCommand NextCommand { get; }
         public IRelayCommand PreviousCommand { get; }
 
-        public ArtDetailViewModel(INavigationService nav)
+        public ArtDetailViewModel(INavigationService nav, IImageRepsitory imageRepsitory )
         {
             _nav = nav;
+            _imageRepository = imageRepsitory;
 
             GoBackCommand = new RelayCommand(() => _nav.NavigateToList(CurrentArtPiece));
 

@@ -27,11 +27,23 @@ namespace TacxArtExplorer.Models.DTO
     /// serialization and communication between the Artic API and TacxArtExplorer. </remarks>
     public sealed record ArtworkDto
     {
+        [JsonPropertyName("id")] public int Id { get; init; }
         [JsonPropertyName("title")] public string Title { get; init; } = "";
         [JsonPropertyName("thumbnail")] public ThumbnailDto? Thumbnail { get; init; }
         [JsonPropertyName("description")] public string? Description { get; init; }
+        [JsonPropertyName("short_description")] public string? ShortDescription { get; init; }
         [JsonPropertyName("artist_id")] public int? ArtistId { get; init; }
         [JsonPropertyName("artist_title")] public string? ArtistTitle { get; init; }
+        // date_display
+        [JsonPropertyName("date_display")] public string? DisplayDate { get; init; }
+        // image_id
+        [JsonPropertyName("image_id")] public string? ImageId { get; init; }
+        //artwork_type_title
+        [JsonPropertyName("artwork_type_title")] public string? ArtworkTypeTitle { get; init; }
+        //place_of_origin
+        [JsonPropertyName("place_of_origin")] public string? PlaceOfOrigin { get; init; }
+        //short_description
+
     }
 
     /// <summary>

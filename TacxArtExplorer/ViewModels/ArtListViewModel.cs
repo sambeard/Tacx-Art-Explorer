@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -10,18 +11,20 @@ using TacxArtExplorer.Services;
 
 namespace TacxArtExplorer.ViewModels
 {
-    internal class ArtListViewModel : ObservableObject
+    public class ArtListViewModel : ObservableObject
     {
         private readonly IArtService _artService;
         private readonly INavigationService _nav;
+        private readonly IArtCacheService _cacheService;
 
         // set to standard artist for now
         private Artist _artist = new Artist(35809, "Claude Monet");
         private bool _isLoading;
-        private ArtPieceViewModel? _selectedArtPiece;
         private ArtPieceViewModel? _focusedArtPiece;
 
         public ObservableCollection<ArtPieceViewModel> ArtPieces { get; } = new();
+
+        public string SelectedArtistName => _artist.Name;
 
         public bool IsLoading
         {
@@ -30,15 +33,6 @@ namespace TacxArtExplorer.ViewModels
             {
                 if (SetProperty(ref _isLoading, value))
                     LoadArtPiecesCommand.NotifyCanExecuteChanged();
-            }
-        }
-        public ArtPieceViewModel? SelectedArtPiece
-        {
-            get => _selectedArtPiece;
-            set
-            {
-                if (SetProperty(ref _selectedArtPiece, value))
-                    SelectArtPieceCommand.NotifyCanExecuteChanged();
             }
         }
 
@@ -55,12 +49,14 @@ namespace TacxArtExplorer.ViewModels
             }
         }
         public IAsyncRelayCommand LoadArtPiecesCommand { get; }
-        public IRelayCommand SelectArtPieceCommand { get; }
+        public IAsyncRelayCommand InvalidateCacheCommand { get; }
+        public IRelayCommand<ArtPieceViewModel> SelectArtPieceCommand { get; }
         public IRelayCommand FocusArtPieceCommand { get; }
 
-        public ArtListViewModel(ArtService artService, INavigationService nav)
+        public ArtListViewModel(INavigationService nav, [FromKeyedServices("ArtStore")] IArtService artService, IArtCacheService cacheService)
         {
             _artService = artService;
+            _cacheService = cacheService;
             _nav = nav;
 
             LoadArtPiecesCommand = new AsyncRelayCommand(
@@ -68,12 +64,17 @@ namespace TacxArtExplorer.ViewModels
                 canExecute: () => !IsLoading && _artist != null
             );
 
-            SelectArtPieceCommand = new RelayCommand(
-                execute: () =>
+            InvalidateCacheCommand = new AsyncRelayCommand(
+                execute: InvalidateCache
+                );
+
+            SelectArtPieceCommand = new RelayCommand<ArtPieceViewModel>(
+                execute: (selectedItem) =>
                 {
-                    _nav.NavigateToDetail(SelectedArtPiece!.Model, ArtPieces.Select(vm=>vm.Model).ToList());
+
+                    _nav.NavigateToDetail(selectedItem!.Model, ArtPieces.Select(vm=>vm.Model).ToList());
                 },
-                canExecute: () => SelectedArtPiece != null
+                canExecute: (selectedItem) => selectedItem != null
             );
             FocusArtPieceCommand = new RelayCommand(
                 execute: () =>
@@ -84,7 +85,14 @@ namespace TacxArtExplorer.ViewModels
                 canExecute: () => FocusedArtPiece != null
             );
         }
-
+        private async Task InvalidateCache() {
+            await _cacheService.RemoveArtPiecesForArtistAsync(_artist);
+            foreach (var ap in ArtPieces) {
+                await _cacheService.RemoveImagesByIdAsync(ap.Model.ImageID);
+            }
+            ArtPieces.Clear();
+            await LoadArtPiecesAsync();
+        }
         private async Task LoadArtPiecesAsync()
         {
             IsLoading = true;
@@ -101,7 +109,6 @@ namespace TacxArtExplorer.ViewModels
                     var id = FocusedArtPiece.Model.Id;
                     var match = ArtPieces.FirstOrDefault(a => a.Model.Id == id) ?? ArtPieces.FirstOrDefault();
                     FocusedArtPiece = match;
-                    SelectedArtPiece = match;
                 }
             }
             catch

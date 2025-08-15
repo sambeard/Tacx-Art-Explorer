@@ -9,7 +9,13 @@ More detailed information about the requirements of this assignment can be found
 
 ## Setup
 
-*Db setup here*
+To get started all you need to do is to open the solution in visual studio (version 2022 used) and build and run the project. The database will automatically be created and initialized from the program, however if problems with the database persist the existing DB can be removed using the command:
+
+```powershell
+ ./DropDb.ps1
+```
+
+Performed in the root project directory.
 
 
 
@@ -39,45 +45,52 @@ Wrapper class that combines the logic of the ArtApiService and the CacheService 
 
 The navigation service is used throughout the application to provide relevant viewmodels to the mainwindow. This way viewmodels can be context aware of the other viewmodels and effect the global application state whilst keeping them as DRY and loosely coupled as possible.
 
+**ImageRepository**
+
+The imagerepository is a tool used to store and convert raw binary image data to usable image sources. 
+
+**BackgroundSyncer**
+
+The background syncer service is responsible for polling the database for artists and refreshing all art pieces for these artists in the cache using the ArtAPIService
+
  
 
 ## Roadmap
 
-- [ ] Models
+- [x] Models
   - [x] Artist
   - [x] ArtPiece
   - [x] ArtPieceImage
   - [x] DTOs
   - [x] DTO mapper
 - [ ] Services
-  - [ ] Art Api Service
+  - [x] Art Api Service
     - [x] Artworks search by artist
-    - [ ] Image search by id
-  - [ ] Art Service
+    - [x] Image search by id
+  - [x] Art Service
     - [x] api fallback logic
-    - [ ] timed data resync
-      - [ ] Cache 
-  - [ ] Cache service
-    - [ ] db initialization / setup
-    - [ ] store
-    - [ ] retreive
-    - [ ] invalidate
-- [ ] Views
-  - [ ] list view
-    - [ ] List view item
+    - [x] timed data resync
+  - [x] Cache service
+    - [x] db initialization / setup
+    - [x] store
+    - [x] retreive
+    - [x] invalidate
+- [x] Views
+  - [x] list view
+    - [x] List view item
     - [ ] Drag from top refresh
-    - [ ] Menu bar
-    - [ ] Progress indicator
-  - [ ] Detail view
-    - [ ] Back button
-    - [ ] Image view
-      - [ ] Focus on image
-      - [ ] Title overlay
-    - [ ] Detail meta data
-    - [ ] move buttons
-- [ ] Logic (ViewModels)
-- [ ] Testing
-  - [ ] Service testing
+    - [x] Menu bar
+    - [x] Progress indicator
+  - [x] Detail view
+    - [x] Back button
+    - [x] Image view
+      - [x] Focus on image
+      - [x] Title overlay
+    - [x] Detail meta data
+    - [x] move buttons
+- [x] Logic (ViewModels)
+- [x] Testing
+  - [ ] Service testing (partly)
 
 
 
@@ -88,6 +101,7 @@ All data is provided by the Artic API, which is provided by the Art Institute of
 The `description` field in the metadata response is licensed under a Creative Commons Attribution 4.0 Generic License (CC-By) and the Terms and Conditions of artic.edu. All other meta is licensed under a Creative Commons Zero (CC0) 1.0 designation and the Terms and Conditions of artic.edu
 
 More information:
+
 [CC 1.0](https://creativecommons.org/publicdomain/zero/1.0/)
 
 [Artic Terms](https://www.artic.edu/terms)	

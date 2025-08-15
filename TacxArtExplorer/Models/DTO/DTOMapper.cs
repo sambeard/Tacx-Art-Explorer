@@ -21,15 +21,18 @@ namespace TacxArtExplorer.Models.DTO
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             var thumbnail = ToThumbnail(dto.Thumbnail);
-            var artist = new Artist(dto.ArtistId ?? 0, dto.ArtistTitle ?? "");
-            return new ArtPiece(
-                id: 0, // ID is not in DTO, will be set by the service
-                title: dto.Title,
-                artist: artist,
-                creationDate: DateTime.MinValue, // TODO: Creation date not in DTO
-                description: dto.Description ?? "",
-                imageId: "", // TODIO: Image ID not in DTO
-                thumbnail: thumbnail);
+            return new ArtPiece {
+                Id= dto.Id, 
+                Title= dto.Title,
+                Artist= new Artist(dto.ArtistId??-1, dto.ArtistTitle??""),
+                DisplayDate= dto.DisplayDate ?? "",
+                ArtworkType= dto.ArtworkTypeTitle ?? "",
+                PlaceOfOrigin= dto.PlaceOfOrigin ?? "",
+                ShortDescription= dto.ShortDescription ?? "",
+                LongDescription= dto.Description ?? "",
+                ImageID= dto.ImageId ?? "",
+                Thumbnail= thumbnail
+            };
         }
 
         public static IEnumerable<ArtPiece> ToArtPieces(ArtworksApiResponseDto apiResponseDto)

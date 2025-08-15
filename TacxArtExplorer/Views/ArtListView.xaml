@@ -3,67 +3,257 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-             xmlns:vm="clr-namespace:TacxArtExplorer.ViewModels"
-             Margin="16">
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:local="clr-namespace:TacxArtExplorer.Views">
+
+    <UserControl.Resources>
+        <!-- Subtle divider + thumb corner -->
+        <SolidColorBrush x:Key="ItemDividerBrush" Color="#22FFFFFF"/>
+        <CornerRadius x:Key="ThumbCorner">8</CornerRadius>
+
+        <!-- Shimmer brush for skeletons -->
+        <LinearGradientBrush x:Key="ShimmerBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#11DDDDFF" Offset="0"/>
+            <GradientStop Color="#66FFFFFF" Offset="0.5"/>
+            <GradientStop Color="#11DDDDFF" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- Dummy items for skeleton list -->
+        <x:Array x:Key="SkeletonItems" Type="{x:Type sys:Int32}">
+            <sys:Int32>0</sys:Int32>
+            <sys:Int32>1</sys:Int32>
+            <sys:Int32>2</sys:Int32>
+            <sys:Int32>3</sys:Int32>
+            <sys:Int32>4</sys:Int32>
+            <sys:Int32>5</sys:Int32>
+            <sys:Int32>6</sys:Int32>
+            <sys:Int32>7</sys:Int32>
+            <sys:Int32>8</sys:Int32>
+            <sys:Int32>9</sys:Int32>
+        </x:Array>
+
+        <!-- Container with divider -->
+        <Style x:Key="ListItemContainerStyle" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Background="{TemplateBinding Background}">
+                            <Grid>
+                                <ContentPresenter/>
+                                <Border Height="1" Background="{StaticResource ItemDividerBrush}" VerticalAlignment="Bottom"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Thumbnail look -->
+        <Style x:Key="ThumbImageStyle" TargetType="Border">
+            <Setter Property="Width" Value="64"/>
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="CornerRadius" Value="{StaticResource ThumbCorner}"/>
+            <Setter Property="Margin" Value="8,8,12,8"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <!--<Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="1" ShadowDepth="2" Opacity="0.15"/>
+                </Setter.Value>
+            </Setter>-->
+        </Style>
+
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-
         </Grid.RowDefinitions>
 
-        <!-- Search Bar -->
-        <!--<StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
-            <TextBox Width="300"
-               Margin="0,0,8,0"
-               materialDesign:HintAssist.Hint="Artist Name"
-               Text="{Binding ArtistQuery, UpdateSourceTrigger=PropertyChanged}"/>
-            <Button Content="Search"
-              Command="{Binding LoadArtworksCommand}"
-              Style="{StaticResource MaterialDesignRaisedButton}" />
-        </StackPanel>-->
-        <!-- Loading Indicator -->
-        <ProgressBar Grid.Row="1"
-                 Height="4"
-                 IsIndeterminate="True"
-                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
-                 Margin="0,0,0,8"/>
+        <!-- Header / AppBar -->
+        <Border Padding="10,2,10,5" Grid.Row="0" >
+            <Grid Height="56"
+              Background="{DynamicResource MaterialDesignPaper}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- Artwork List -->
-        <ListBox Grid.Row="2"
-             ItemsSource="{Binding ArtPieces}"
-             SelectedItem="{Binding SelectedArtPiece}"
-             Style="{StaticResource MaterialDesignListBox}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal" Margin="4">
-                        <Image Source="{Binding ThumbnailImage}"
-                   Width="48" Height="48"
-                   Margin="0,0,8,0"
-                   Stretch="UniformToFill"/>
-                        <TextBlock Text="{Binding Title}"
-                       VerticalAlignment="Center"
-                       FontSize="14"/>
-                        <TextBlock Text=" — "
-                       VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding ArtistName}"
-                       VerticalAlignment="Center"
-                       Foreground="Gray"/>
-                        <Button Command="{Binding SelectArtPieceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" >
-                            <materialDesign:PackIcon Padding="5" Kind="ChevronRight" Width="24" Height="24"/>
-                        </Button>
-                    </StackPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
+                <!-- Buttons-->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Command="{Binding LoadArtPiecesCommand}"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="Refresh">
+                        <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24"/>
+                    </Button>
+                    <Button Grid.Column="1" Command="{Binding InvalidateCacheCommand}"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="Invalidate Cache">
+                        <materialDesign:PackIcon Kind="Delete" Width="24" Height="24"/>
+                    </Button>
 
-            <!-- Double‑click to open detail -->
-            <i:Interaction.Triggers>
-                <i:EventTrigger EventName="MouseDoubleClick">
-                    <i:InvokeCommandAction Command="{Binding SelectArtPieceCommand}"/>
-                </i:EventTrigger>
-            </i:Interaction.Triggers>
-        </ListBox>
+                </Grid>
+
+
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                       Text="{Binding SelectedArtistName}"
+                       FontSize="16" FontWeight="SemiBold"/>
+
+                <Button Grid.Column="2" IsEnabled="False" ToolTip="Refres"
+                    Style="{StaticResource MaterialDesignIconButton}">
+                    <materialDesign:PackIcon Kind="Sync" Width="24" Height="24"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- Skeleton shimmer list -->
+            <ItemsControl Grid.Row="1" x:Name="SkeletonList"
+                          ItemsSource="{StaticResource SkeletonItems}">
+                <ItemsControl.Style>
+                    <Style TargetType="ItemsControl">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ItemsControl.Style>
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Height="88" Margin="8,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource ThumbImageStyle}">
+                                <Rectangle Fill="#88eeeeee" RadiusX="8" RadiusY="8"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="0,8" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                <Rectangle Height="18" Width="200" Margin="0,0,0,6" Fill="#33666666" HorizontalAlignment="Left"/>
+                                <Rectangle Height="30" Margin="0,0,0,6" Fill="#33dddddd" HorizontalAlignment="Stretch"/>
+                                <!--<Rectangle Height="140" Width="140" Fill="#22bbbbbb"/>-->
+                            </StackPanel>
+
+                            <Button Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center" IsEnabled="False"
+                                Style="{StaticResource MaterialDesignIconButton}">
+                                <materialDesign:PackIcon Kind="ChevronRight" Width="24" Height="24"/>
+                            </Button>
+
+                            <!-- Shimmer band -->
+                            <Rectangle x:Name="ShimmerRect" IsHitTestVisible="False" Grid.ColumnSpan="3" Height="88"
+                                       Fill="{StaticResource ShimmerBrush}">
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform X="-120"/>
+                                </Rectangle.RenderTransform>
+                            </Rectangle>
+
+                            <Grid.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetName="ShimmerRect"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             From="0" To="600" Duration="0:0:1.6"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Grid.Triggers>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Actual list -->
+            <ListBox Grid.Row="1"
+                     x:Name="ArtList"
+                     ItemsSource="{Binding ArtPieces}"
+                     ItemContainerStyle="{StaticResource ListItemContainerStyle}"
+                    >
+                <ListBox.Style>
+                    <Style TargetType="ListBox" BasedOn="{StaticResource MaterialDesignListBox}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.Style>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="8,0" Height="88">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Thumbnail -->
+                            <Border Style="{StaticResource ThumbImageStyle}" CornerRadius="20">
+                                <Image Source="{Binding ThumbnailImage}" Stretch="UniformToFill">
+
+                                </Image>
+                            </Border>
+
+                            <!-- Title, then Year • Artist -->
+                            <Grid Grid.Column="1" Margin="0,8" VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Row="0"  Grid.Column="0" Text="{Binding Title}"
+                                           FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="15,1,0,0" VerticalAlignment="Bottom">
+                                    <TextBlock Text="{Binding DisplayDate}" Opacity="0.65"/>
+                                    <TextBlock Text=" • " Opacity="0.45"/>
+                                    <TextBlock Text="{Binding ArtistName}" Opacity="0.65"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Summary}"
+                                           Height="32px"
+                                           FontSize="12px"
+                                           LineHeight="16px"
+                                           Margin="0,2,0,0" Opacity="0.75"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap"/>
+                            </Grid>
+
+                            <!-- Right‑aligned action button -->
+                            <Button Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Command="{Binding DataContext.SelectArtPieceCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                    CommandParameter="{Binding}" 
+                                    Style="{StaticResource MaterialDesignIconButton}">
+                                <materialDesign:PackIcon Kind="ChevronRight" Width="24" Height="24"/>
+                            </Button>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
     </Grid>
 </UserControl>
